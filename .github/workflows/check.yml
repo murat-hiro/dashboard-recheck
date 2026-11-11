@@ -1,0 +1,71 @@
+name: 対象行の再解放チェック
+
+# 公開リポジトリ用。5分ごとに管理ダッシュボードを確認し、
+# 担当が Secrets の TARGET_WORKER と完全一致する行だけを再解放する。
+# それ以外の行には絶対に触れない（check.js 側でも絞り込み済み）。
+#
+# 公開用設計:
+# - ダッシュボードURL・対象担当名・ログイン状態はすべて Secrets。
+#   コード・ログ・JSON出力に、URL・人名・会社名・着手日時は出ない。
+#   ログに出るのは件数（stuck / matched / released / untouched）だけ。
+# - スクリーンショット・トレース・アーティファクトは上げない。
+# - トリガーは schedule と workflow_dispatch のみ。
+#   pull_request では動かさない（フォークから Secrets は使えない）。
+# - 第三者アクションは使わない。checkout / setup-node のみ。
+#   SHA固定は GitHub API のレート制限で今回は取得できなかったため
+#   v4 タグで指定している。公開前に SHA に固定し直すことを推奨する。
+# - 決定事項（2026-11-11 16:06 JST、米山さん）：公開、5分ごと。
+#   公開リポジトリの標準ランナーは無料で無制限のため、5分ごとでも
+#   無料枠の心配はない。ただしログは誰でも読めるため、上記の設計が前提。
+
+on:
+  schedule:
+    # 5分ごと。GitHub Actions の cron は最短 5 分間隔。
+    # 実行時刻は数分遅れることがある。
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dashboard-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Restore session from secret
+        # GOOGLE_STORAGE_STATE_B64 は、ログイン済みセッションを含む
+        # Playwright storageState JSON を base64 化したもの。
+        # セッションには有効期限があり、切れたら作り直して Secret を更新する。
+        # このファイルはこのジョブの実行中にだけ存在し、リポジトリには残らない。
+        # 値を echo しない。base64 変換後の文字列もログに出さない。
+        run: |
+          printf '%s' "$GOOGLE_STORAGE_STATE_B64" | base64 -d > storage-state.json
+        env:
+          GOOGLE_STORAGE_STATE_B64: ${{ secrets.GOOGLE_STORAGE_STATE_B64 }}
+
+      - name: Run check (live)
+        run: DRY_RUN=false STORAGE_STATE=./storage-state.json node check.js
+        env:
+          DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
+          TARGET_WORKER: ${{ secrets.TARGET_WORKER }}
+
+      - name: Remove session file
+        if: always()
+        run: rm -f storage-state.json
