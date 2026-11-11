@@ -47,9 +47,11 @@ jobs:
         run: npm ci
 
       - name: Install Playwright Chromium
-        # 一時的な通信の失敗（22:50 JSTに発生、Ubuntuサーバーへつながらず
-        # 失敗）でも、もう1回だけ入れ直して続ける。
-        run: npx playwright install chromium --with-deps || npx playwright install chromium --with-deps
+        # --with-deps は使わない。apt-get update が Ubuntu のサーバーへ
+        # つながらず10分以上止まることがあり（23:05 JSTの実行で発生、
+        # 10分のタイムアウトでキャンセル）、後続の実行も詰まるため。
+        # ブラウザ本体だけ入れる。失敗したらもう1回だけ入れ直す。
+        run: npx playwright install chromium || npx playwright install chromium
 
       - name: Restore session from secret
         # GOOGLE_STORAGE_STATE_B64 は、ログイン済みセッションを含む
