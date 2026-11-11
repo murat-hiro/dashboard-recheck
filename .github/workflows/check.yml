@@ -63,8 +63,8 @@ jobs:
       # 初回は必ず DRY_RUN=true で手動実行し、ログに件数だけが出ることを
       # 確認してから DRY_RUN=false に戻す。false のまま push すると
       # 最初の定時実行（5分以内）からいきなりライブでクリックしてしまう。
-      - name: Run check (dry-run first)
-        run: DRY_RUN=true STORAGE_STATE=./storage-state.json node check.js
+      - name: Run check (live)
+        run: DRY_RUN=false STORAGE_STATE=./storage-state.json node check.js
         env:
           DASHBOARD_URL: ${{ secrets.DASHBOARD_URL }}
           TARGET_WORKER: ${{ secrets.TARGET_WORKER }}
