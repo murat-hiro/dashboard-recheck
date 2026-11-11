@@ -94,8 +94,9 @@ storageState の作り方（ローカルで、自分のブラウザでログイ�
      ```
      出力された文字列をそのまま Secret に貼ります。
      この文字列をログやチャットに出さないでください。
-3. `.github/workflows/check.yml` が5分ごとに `DRY_RUN=false` で実行します。
-   手動実行は Actions タブの workflow_dispatch からもできます。
+3. `.github/workflows/check.yml` が5分ごとに実行します。初回は
+   `DRY_RUN=true` のドライランで、ログに件数だけが出ることを確認してから
+   `DRY_RUN=false` に戻してライブに切り替えます。
 4. 初回は必ず **DRY_RUN で確認**してください。ワークフローを一時的に
    `DRY_RUN=true` にするか、ローカルでドライランして、
    ログに件数だけが出て、対象行が正しく数えられることを確認します。
@@ -110,8 +111,8 @@ storageState の作り方（ローカルで、自分のブラウザでログイ�
 
 ## 現状と注意点
 
-- GitHub リポジトリはまだ作っていません。Secret もまだ設定していません。
-  費用はまだ発生していません。
+- GitHub リポジトリ `dashboard-recheck` は作成済みです（非公開、README等なし）。
+  push と Secret 3件の設定はまだです。費用はまだ発生していません。
 - ローカルでのドライランは、この調査用VMでは実行できませんでした。
   Chromium のダウンロードが途中で切れ、VM のプロキシ経由では
   Chromium からの接続が失敗したためです。これは VM の制限によるもので、
@@ -122,7 +123,7 @@ storageState の作り方（ローカルで、自分のブラウザでログイ�
 - 切り替えの前に、まずドライランで「対象行が正しく数えられること」と
   「対象以外の行に触れないこと」を確認してください。
   Muse の5分ごとチェックは、こちらが並走で動くことが確認できるまで止めません。
-- 公開前にやること：`actions/checkout` と `actions/setup-node` を
-  SHA で固定し直すこと（今回は GitHub API のレート制限で取得できず、
-  v4 タグのままです）。また、初回実行後に Actions のログを開き、
+- 公開前にやること：`actions/checkout` と `actions/setup-node` は
+  SHA で固定済みです（checkout v4.2.2、setup-node v4.1.0）。
+  初回実行後に Actions のログを開き、
   人名・会社名・URL が出ていないことを目視で確認してください。

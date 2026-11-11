@@ -12,8 +12,8 @@ name: 対象行の再解放チェック
 # - トリガーは schedule と workflow_dispatch のみ。
 #   pull_request では動かさない（フォークから Secrets は使えない）。
 # - 第三者アクションは使わない。checkout / setup-node のみ。
-#   SHA固定は GitHub API のレート制限で今回は取得できなかったため
-#   v4 タグで指定している。公開前に SHA に固定し直すことを推奨する。
+#   両方とも SHA で固定済み（checkout v4.2.2、setup-node v4.1.0）。
+#   タグは移動できるため、公開前に SHA 固定が必須。
 # - 決定事項（2026-11-11 16:06 JST、米山さん）：公開、5分ごと。
 #   公開リポジトリの標準ランナーは無料で無制限のため、5分ごとでも
 #   無料枠の心配はない。ただしログは誰でも読めるため、上記の設計が前提。
@@ -37,9 +37,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: 20
 
